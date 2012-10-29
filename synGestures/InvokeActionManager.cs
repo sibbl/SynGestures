@@ -67,7 +67,7 @@ namespace synGestures
         public bool execute(ActionType type)
         {
             //Console.WriteLine("find action for type: " + type.ToString());
-            if (bindings.ContainsKey(type)) bindings[type].Execute();
+            if (bindings.ContainsKey(type) && bindings[type] != null) bindings[type].Execute();
             else return false;
             return true;
         }

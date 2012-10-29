@@ -66,14 +66,46 @@ namespace synGestures.Config
         {
             var newConfig = new Configuration();
 
+            newConfig.MouseTapsLongMs = 400;
+            newConfig.MouseTapsLongMovingArea = 150;
+            newConfig.TapMaxMsBetween = 200;
+            newConfig.TapMaxDistance = 150;
+
+            newConfig.SwipeBorderInsetX = newConfig.SwipeBorderInsetY = 150;
+            newConfig.SwipeBorderSpeedMs = 300;
+
+            newConfig.ScrollSpeed = 40;
+            newConfig.ScrollAccelerationEnabled = true;
+            newConfig.ScrollAcceleration = 200;
+            newConfig.ScrollReverse = true;
+            newConfig.ScrollVertical = true;
+            newConfig.ScrollHorizontal = true;
+
+            newConfig.SwipeTwoMovementXDirection = 150;
+            newConfig.SwipeTwoMovementXOrthogonal = 100;
+            newConfig.SwipeTwoMovementYDirection = 200;
+            newConfig.SwipeTwoMovementYOrthogonal = 200;
+            newConfig.SwipeThreeMovementXDirection = 200;
+            newConfig.SwipeThreeMovementXOrthogonal = 200;
+            newConfig.SwipeThreeMovementYDirection = 200;
+            newConfig.SwipeThreeMovementYOrthogonal = 200;
+
             //newConfig.MouseTapOne = new ConfigInvokeItem(DefaultAction.LeftClick);
-            newConfig.MouseTapOneLong = new ConfigInvokeItem(DefaultAction.RightClick);
-            newConfig.SwipeThreeLeft = new ConfigInvokeItem(DefaultAction.ShowCharms);
-            newConfig.SwipeThreeRight = new ConfigInvokeItem(DefaultAction.ShowMetroApps);
+            newConfig.MouseTapOneLong = new ConfigInvokeItem(DefaultAction.NoAction);
+            newConfig.MouseTapTwo = new ConfigInvokeItem(DefaultAction.MiddleClick);
+            newConfig.MouseTapTwoLong = new ConfigInvokeItem(DefaultAction.MiddleClick);
+            newConfig.MouseTapThree = new ConfigInvokeItem(DefaultAction.RightClick);
+            newConfig.MouseTapThreeLong = new ConfigInvokeItem(DefaultAction.RightClick);
+
+            newConfig.SwipeThreeUp = new ConfigInvokeItem(DefaultAction.ScrollToBottom);
+            newConfig.SwipeThreeDown = new ConfigInvokeItem(DefaultAction.ScrollToTop);
+            newConfig.SwipeThreeLeft = new ConfigInvokeItem(DefaultAction.NextTab);
+            newConfig.SwipeThreeRight = new ConfigInvokeItem(DefaultAction.PrevTab);
 
             newConfig.SwipeBorderRight = new ConfigInvokeItem(DefaultAction.ShowCharms);
-            newConfig.SwipeBorderLeft = new ConfigInvokeItem(DefaultAction.ShowMetroApps);
+            newConfig.SwipeBorderLeft = new ConfigInvokeItem(DefaultAction.SwitchToLastMetroWindow);
             newConfig.SwipeBorderBottom = new ConfigInvokeItem(DefaultAction.ShowMetroAppSettings);
+            newConfig.SwipeBorderTop = new ConfigInvokeItem(DefaultAction.ShowMetroApps);
 
             return newConfig;
         }

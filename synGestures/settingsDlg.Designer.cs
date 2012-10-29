@@ -99,6 +99,7 @@
             this.lblSingleTap = new System.Windows.Forms.Label();
             this.btnCancel = new System.Windows.Forms.Button();
             this.btnOK = new System.Windows.Forms.Button();
+            this.label21 = new System.Windows.Forms.Label();
             this.tabControl1.SuspendLayout();
             this.generalTab.SuspendLayout();
             this.scrollingTab.SuspendLayout();
@@ -792,6 +793,7 @@
             // 
             // panelSingleTap
             // 
+            this.panelSingleTap.Controls.Add(this.label21);
             this.panelSingleTap.Controls.Add(this.lblLongSingleTap);
             this.panelSingleTap.Controls.Add(this.comboLongSingleTap);
             this.panelSingleTap.Controls.Add(this.comboSingleTap);
@@ -826,6 +828,7 @@
             this.comboSingleTap.Name = "comboSingleTap";
             this.comboSingleTap.Size = new System.Drawing.Size(214, 21);
             this.comboSingleTap.TabIndex = 2;
+            this.comboSingleTap.Visible = false;
             // 
             // lblSingleTap
             // 
@@ -856,6 +859,17 @@
             this.btnOK.TabIndex = 2;
             this.btnOK.Text = "OK";
             this.btnOK.UseVisualStyleBackColor = true;
+            // 
+            // label21
+            // 
+            this.label21.AutoSize = true;
+            this.label21.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label21.Location = new System.Drawing.Point(7, 32);
+            this.label21.Name = "label21";
+            this.label21.Size = new System.Drawing.Size(200, 26);
+            this.label21.TabIndex = 11;
+            this.label21.Text = "Please use the official Synaptics driver\r\nsettings to configure single tap behavi" +
+    "our";
             // 
             // frmSettings
             // 
@@ -975,6 +989,7 @@
         private System.Windows.Forms.Label label9;
         private Microsoft.VisualBasic.PowerPacks.ShapeContainer shapeContainer1;
         private Microsoft.VisualBasic.PowerPacks.LineShape lineShape1;
+        private System.Windows.Forms.Label label21;
 
     }
 }

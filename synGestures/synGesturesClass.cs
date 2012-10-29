@@ -81,7 +81,7 @@ namespace synGestures
         public synGesturesClass()
         {
             Assembly a = Assembly.GetEntryAssembly();
-            configPath = Path.Combine(Path.GetDirectoryName(a.Location), "data.xml");
+            configPath = Path.Combine(Path.GetDirectoryName(a.Location), "synGesturesData.xml");
             config = Configuration.Load(configPath);
 
             actions = new InvokeActionManager(config);
