@@ -31,14 +31,14 @@
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(frmSettings));
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.generalTab = new System.Windows.Forms.TabPage();
+            this.btnUpdate = new System.Windows.Forms.Button();
+            this.panel1 = new System.Windows.Forms.Panel();
             this.LinkGooglePlus = new System.Windows.Forms.LinkLabel();
             this.linkFacebook = new System.Windows.Forms.LinkLabel();
             this.linkTwitter = new System.Windows.Forms.LinkLabel();
             this.label20 = new System.Windows.Forms.Label();
             this.label9 = new System.Windows.Forms.Label();
             this.chkWindows = new System.Windows.Forms.CheckBox();
-            this.shapeContainer1 = new Microsoft.VisualBasic.PowerPacks.ShapeContainer();
-            this.lineShape1 = new Microsoft.VisualBasic.PowerPacks.LineShape();
             this.scrollingTab = new System.Windows.Forms.TabPage();
             this.label1 = new System.Windows.Forms.Label();
             this.trackScrollingSpeed = new System.Windows.Forms.TrackBar();
@@ -93,13 +93,14 @@
             this.comboTwoTaps = new System.Windows.Forms.ComboBox();
             this.lblTwoTaps = new System.Windows.Forms.Label();
             this.panelSingleTap = new System.Windows.Forms.Panel();
+            this.label21 = new System.Windows.Forms.Label();
             this.lblLongSingleTap = new System.Windows.Forms.Label();
             this.comboLongSingleTap = new System.Windows.Forms.ComboBox();
             this.comboSingleTap = new System.Windows.Forms.ComboBox();
             this.lblSingleTap = new System.Windows.Forms.Label();
             this.btnCancel = new System.Windows.Forms.Button();
             this.btnOK = new System.Windows.Forms.Button();
-            this.label21 = new System.Windows.Forms.Label();
+            this.linkWebsite = new System.Windows.Forms.LinkLabel();
             this.tabControl1.SuspendLayout();
             this.generalTab.SuspendLayout();
             this.scrollingTab.SuspendLayout();
@@ -132,13 +133,15 @@
             // 
             // generalTab
             // 
+            this.generalTab.Controls.Add(this.linkWebsite);
+            this.generalTab.Controls.Add(this.btnUpdate);
+            this.generalTab.Controls.Add(this.panel1);
             this.generalTab.Controls.Add(this.LinkGooglePlus);
             this.generalTab.Controls.Add(this.linkFacebook);
             this.generalTab.Controls.Add(this.linkTwitter);
             this.generalTab.Controls.Add(this.label20);
             this.generalTab.Controls.Add(this.label9);
             this.generalTab.Controls.Add(this.chkWindows);
-            this.generalTab.Controls.Add(this.shapeContainer1);
             this.generalTab.Location = new System.Drawing.Point(4, 22);
             this.generalTab.Name = "generalTab";
             this.generalTab.Padding = new System.Windows.Forms.Padding(3);
@@ -147,10 +150,28 @@
             this.generalTab.Text = "General";
             this.generalTab.UseVisualStyleBackColor = true;
             // 
+            // btnUpdate
+            // 
+            this.btnUpdate.Location = new System.Drawing.Point(327, 16);
+            this.btnUpdate.Name = "btnUpdate";
+            this.btnUpdate.Size = new System.Drawing.Size(114, 23);
+            this.btnUpdate.TabIndex = 29;
+            this.btnUpdate.Text = "Check for update";
+            this.btnUpdate.UseVisualStyleBackColor = true;
+            this.btnUpdate.Click += new System.EventHandler(this.btnUpdate_Click);
+            // 
+            // panel1
+            // 
+            this.panel1.BackColor = System.Drawing.Color.Black;
+            this.panel1.Location = new System.Drawing.Point(16, 63);
+            this.panel1.Name = "panel1";
+            this.panel1.Size = new System.Drawing.Size(425, 1);
+            this.panel1.TabIndex = 28;
+            // 
             // LinkGooglePlus
             // 
             this.LinkGooglePlus.AutoSize = true;
-            this.LinkGooglePlus.Location = new System.Drawing.Point(385, 91);
+            this.LinkGooglePlus.Location = new System.Drawing.Point(392, 91);
             this.LinkGooglePlus.Name = "LinkGooglePlus";
             this.LinkGooglePlus.Size = new System.Drawing.Size(47, 13);
             this.LinkGooglePlus.TabIndex = 27;
@@ -161,7 +182,7 @@
             // linkFacebook
             // 
             this.linkFacebook.AutoSize = true;
-            this.linkFacebook.Location = new System.Drawing.Point(324, 91);
+            this.linkFacebook.Location = new System.Drawing.Point(331, 91);
             this.linkFacebook.Name = "linkFacebook";
             this.linkFacebook.Size = new System.Drawing.Size(55, 13);
             this.linkFacebook.TabIndex = 26;
@@ -172,7 +193,7 @@
             // linkTwitter
             // 
             this.linkTwitter.AutoSize = true;
-            this.linkTwitter.Location = new System.Drawing.Point(279, 91);
+            this.linkTwitter.Location = new System.Drawing.Point(286, 91);
             this.linkTwitter.Name = "linkTwitter";
             this.linkTwitter.Size = new System.Drawing.Size(39, 13);
             this.linkTwitter.TabIndex = 25;
@@ -209,25 +230,6 @@
             this.chkWindows.TabIndex = 0;
             this.chkWindows.Text = "Start with windows";
             this.chkWindows.UseVisualStyleBackColor = true;
-            // 
-            // shapeContainer1
-            // 
-            this.shapeContainer1.Location = new System.Drawing.Point(3, 3);
-            this.shapeContainer1.Margin = new System.Windows.Forms.Padding(0);
-            this.shapeContainer1.Name = "shapeContainer1";
-            this.shapeContainer1.Shapes.AddRange(new Microsoft.VisualBasic.PowerPacks.Shape[] {
-            this.lineShape1});
-            this.shapeContainer1.Size = new System.Drawing.Size(452, 397);
-            this.shapeContainer1.TabIndex = 1;
-            this.shapeContainer1.TabStop = false;
-            // 
-            // lineShape1
-            // 
-            this.lineShape1.Name = "lineShape1";
-            this.lineShape1.X1 = 18;
-            this.lineShape1.X2 = 428;
-            this.lineShape1.Y1 = 68;
-            this.lineShape1.Y2 = 68;
             // 
             // scrollingTab
             // 
@@ -803,6 +805,17 @@
             this.panelSingleTap.Size = new System.Drawing.Size(452, 76);
             this.panelSingleTap.TabIndex = 0;
             // 
+            // label21
+            // 
+            this.label21.AutoSize = true;
+            this.label21.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label21.Location = new System.Drawing.Point(7, 32);
+            this.label21.Name = "label21";
+            this.label21.Size = new System.Drawing.Size(200, 26);
+            this.label21.TabIndex = 11;
+            this.label21.Text = "Please use the official Synaptics driver\r\nsettings to configure single tap behavi" +
+    "our";
+            // 
             // lblLongSingleTap
             // 
             this.lblLongSingleTap.AutoSize = true;
@@ -860,16 +873,16 @@
             this.btnOK.Text = "OK";
             this.btnOK.UseVisualStyleBackColor = true;
             // 
-            // label21
+            // linkWebsite
             // 
-            this.label21.AutoSize = true;
-            this.label21.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label21.Location = new System.Drawing.Point(7, 32);
-            this.label21.Name = "label21";
-            this.label21.Size = new System.Drawing.Size(200, 26);
-            this.label21.TabIndex = 11;
-            this.label21.Text = "Please use the official Synaptics driver\r\nsettings to configure single tap behavi" +
-    "our";
+            this.linkWebsite.AutoSize = true;
+            this.linkWebsite.Location = new System.Drawing.Point(234, 91);
+            this.linkWebsite.Name = "linkWebsite";
+            this.linkWebsite.Size = new System.Drawing.Size(46, 13);
+            this.linkWebsite.TabIndex = 30;
+            this.linkWebsite.TabStop = true;
+            this.linkWebsite.Text = "Website";
+            this.linkWebsite.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.linkWebsite_LinkClicked);
             // 
             // frmSettings
             // 
@@ -987,9 +1000,10 @@
         private System.Windows.Forms.LinkLabel linkTwitter;
         private System.Windows.Forms.Label label20;
         private System.Windows.Forms.Label label9;
-        private Microsoft.VisualBasic.PowerPacks.ShapeContainer shapeContainer1;
-        private Microsoft.VisualBasic.PowerPacks.LineShape lineShape1;
         private System.Windows.Forms.Label label21;
+        private System.Windows.Forms.Panel panel1;
+        private System.Windows.Forms.Button btnUpdate;
+        private System.Windows.Forms.LinkLabel linkWebsite;
 
     }
 }

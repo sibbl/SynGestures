@@ -9,6 +9,7 @@ using synGestures.Properties;
 using System.Runtime.InteropServices;
 using synGestures.Config;
 using SYNCOMLib;
+using Microsoft.Win32;
 
 namespace synGestures
 {
@@ -17,8 +18,10 @@ namespace synGestures
     {
         public Configuration config;
 
-        private SynAPICtrl synAPI;
+        private SynAPI synAPI;
         private SynDeviceCtrl synTouchPad;
+
+        private Logger log;
 
         private int devHandle = -1;
 
@@ -79,15 +82,16 @@ namespace synGestures
         }
         public void Resume()
         {
-            synAPI = new SynAPICtrl();
+            log.LogDebug("resuming...");
+            synAPI = new SynAPI();
             synTouchPad = new SynDeviceCtrl();
             synTouchPad.OnPacket += new _ISynDeviceCtrlEvents_OnPacketEventHandler(onPacket);
             synAPI.Initialize();
             
-            devHandle = synAPI.FindDevice(
-                SYNCTRLLib.SynConnectionType.SE_ConnectionAny,
-                SYNCTRLLib.SynDeviceType.SE_DeviceTouchPad,
-                -1);
+            synAPI.FindDevice(
+                (int)SYNCTRLLib.SynConnectionType.SE_ConnectionAny,
+                (int)SYNCTRLLib.SynDeviceType.SE_DeviceTouchPad,
+                ref devHandle);
             if (devHandle < 0)
             {
                 System.Threading.Thread.Sleep(500);
@@ -99,24 +103,30 @@ namespace synGestures
         }
         public bool Init()
         {
-
+            log = new Logger();
             try
             {
-                synAPI = new SynAPICtrl();
+                log.LogDebug("Create SynAPI");
+                synAPI = new SynAPI();
+                log.LogDebug("Create SynDeviceCtrl");
                 synTouchPad = new SynDeviceCtrl();
+                log.LogDebug("Create OnPacketEventHandler");
 
                 synTouchPad.OnPacket += new _ISynDeviceCtrlEvents_OnPacketEventHandler(onPacket);
 
+                log.LogDebug("Init SynAPI");
                 synAPI.Initialize();
 
-                devHandle = synAPI.FindDevice(
-                    SYNCTRLLib.SynConnectionType.SE_ConnectionAny,
-                    SYNCTRLLib.SynDeviceType.SE_DeviceTouchPad,
-                    -1);
+                log.LogDebug("Find Synaptics Device");
+                synAPI.FindDevice(
+                    (int)SYNCTRLLib.SynConnectionType.SE_ConnectionAny,
+                    (int)SYNCTRLLib.SynDeviceType.SE_DeviceTouchPad,
+                    ref devHandle);
 
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                log.LogDebug("Error on init: " + ex.InnerException.Message);
                 MessageBox.Show(
                     Resources.error_startup_no_driver_found,
                     Resources.error_msg_title,
@@ -129,11 +139,13 @@ namespace synGestures
 
             if (devHandle < 0)
             {
+                log.LogDebug("No device handle found");
                 MessageBox.Show(Resources.error_startup_no_device_found,
                                 Resources.error_msg_title, MessageBoxButtons.OK, MessageBoxIcon.Error);
                 Application.Exit();
                 return false;
             }
+            log.LogDebug("Device handle found: "+devHandle);
 
             synTouchPad.Select(devHandle);
             //synTouchPad.CreatePacket(ref _synPacket);
@@ -142,10 +154,14 @@ namespace synGestures
             if (multi < 0)
             {
                 //HKLM "System\\CurrentControlSet\\Services\\SynTP\\Parameters" -> CapabilitiesMask must be 0xFFFFFFFF
-                //TODO: do different checks here
-                MessageBox.Show("multiple finger support is missing!",
-                                Resources.error_msg_title, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                string parampath = @"System\CurrentControlSet\Services\SynTP\Parameters";
+                RegistryKey key = Registry.LocalMachine.CreateSubKey(parampath);
+                key.SetValue("CapabilitiesMask", 0xFFFFFFFF);
+                MessageBox.Show("Multiple finger support was missing. We made some changes to the registry.\n\nTry running SynGestures again or reboot your computer and try again then.",
+                                Resources.error_msg_title, MessageBoxButtons.OK, MessageBoxIcon.Information);
+
                 Application.Exit();
+                return false;
             }
             ReadDeviceProperties();
 
@@ -178,6 +194,19 @@ namespace synGestures
             xmax = synTouchPad.GetLongProperty(SYNCTRLLib.SynDeviceProperty.SP_XHiSensor);
             ymin = synTouchPad.GetLongProperty(SYNCTRLLib.SynDeviceProperty.SP_YLoSensor);
             ymax = synTouchPad.GetLongProperty(SYNCTRLLib.SynDeviceProperty.SP_YHiSensor);
+
+            log.LogDebug("ylo=" + ylo);
+            log.LogDebug("yhi=" + yhi);
+            log.LogDebug("xlo=" + xlo);
+            log.LogDebug("xhi=" + xhi);
+            log.LogDebug("xlorim=" + xlorim);
+            log.LogDebug("xhirim=" + xhirim);
+            log.LogDebug("ylorim=" + ylorim);
+            log.LogDebug("yhirim=" + yhirim);
+            log.LogDebug("xmin=" + xmin);
+            log.LogDebug("xmax=" + xmax);
+            log.LogDebug("ymin=" + ymin);
+            log.LogDebug("ymax=" + ymax);
 
             CheckTappingProperty();
 
@@ -251,6 +280,13 @@ namespace synGestures
             int y = packet.GetLongProperty(SYNCTRLLib.SynPacketProperty.SP_Y);
             int x = packet.GetLongProperty(SYNCTRLLib.SynPacketProperty.SP_X);
 
+            log.LogDebug("got packet");
+            log.LogDebug("nof=" + nof);
+            log.LogDebug("fstate=" + fstate);
+            log.LogDebug("xd=" + xd);
+            log.LogDebug("yd=" + yd);
+            log.LogDebug("x=" + x);
+            log.LogDebug("y=" + y);
 
             if (nof > tapMaxNof) tapMaxNof = nof; 
             //handle tapping
@@ -288,23 +324,29 @@ namespace synGestures
                          tapFirstTouchPos.Y > (ymax - config.SwipeBorderStartInsetY) || 
                          tapFirstTouchPos.Y < (xmin + config.SwipeBorderStartInsetY)))
                     {
+                        log.LogDebug("first touch: " + tapFirstTouchPos.X + "/" + tapFirstTouchPos.Y);
+                        log.LogDebug("current touch: " + x + "/" + y);
                         if (tapFirstTouchPos.X > (xmax - config.SwipeBorderStartInsetX) && x < tapFirstTouchPos.X - config.SwipeBorderInsetX)
                         {
+                            log.LogDebug("swipe border right");
                             ok = OnActionEvent(ActionType.SwipeBorderRight);
                             NativeMethods.SetCursorPos(tapTouchPos.X, tapTouchPos.Y);
                         }
                         else if (tapFirstTouchPos.X < (xmin + config.SwipeBorderStartInsetX) && x > tapFirstTouchPos.X + config.SwipeBorderInsetX)
                         {
+                            log.LogDebug("swipe border left");
                             ok = OnActionEvent(ActionType.SwipeBorderLeft);
                             NativeMethods.SetCursorPos(tapTouchPos.X, tapTouchPos.Y);
                         }
                         else if (tapFirstTouchPos.Y > (ymax - config.SwipeBorderStartInsetY) && y < tapFirstTouchPos.Y - config.SwipeBorderInsetY)
                         {
+                            log.LogDebug("swipe border top");
                             ok = OnActionEvent(ActionType.SwipeBorderTop);
                             NativeMethods.SetCursorPos(tapTouchPos.X, tapTouchPos.Y);
                         }
                         else if (tapFirstTouchPos.Y < (ymin + config.SwipeBorderStartInsetY) && y > tapFirstTouchPos.Y + config.SwipeBorderInsetY)
                         {
+                            log.LogDebug("swipe border bottom");
                             ok = OnActionEvent(ActionType.SwipeBorderBottom);
                             NativeMethods.SetCursorPos(tapTouchPos.X, tapTouchPos.Y);
                         }

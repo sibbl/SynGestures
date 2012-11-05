@@ -8,6 +8,7 @@ using System.Linq;
 using System.Windows.Forms;
 using synGestures.Config;
 using synGestures.Helper;
+using System.Xml;
 
 namespace synGestures
 {
@@ -21,6 +22,7 @@ namespace synGestures
 
         public frmSettings()
         {
+            //checkUpdate();
             InitializeComponent();
         }
 
@@ -264,6 +266,11 @@ namespace synGestures
             config.ScrollSpeed = trackScrollingSpeed.Value;
             applyConfig();
         }
+        private void linkWebsite_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            System.Diagnostics.Process.Start("http://syngestures.klickin-webdesign.de");
+
+        }
 
         private void linkTwitter_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
@@ -318,6 +325,52 @@ namespace synGestures
             }
             tabControl1.SelectedTab.Show();
         }
+
+        private void checkUpdate(bool alertUpdateOnly = true)
+        {
+            try
+            {
+                XmlTextReader XmlReader = new XmlTextReader("http://syngestures.klickin-webdesign.de/version.xml");
+
+                int currentVersionId = 1;
+                int newVersionId = 0;
+                string newVersionString = "";
+                string newVersionChanges = "";
+                string newVersionUrl = "";
+                while (XmlReader.Read())
+                {
+                    if (XmlReader.Name.ToString() == "id") newVersionId = Int32.Parse(XmlReader.ReadString());
+                    if (XmlReader.Name.ToString() == "name") newVersionString = XmlReader.ReadString().Trim();
+                    if (XmlReader.Name.ToString() == "changes") newVersionChanges = XmlReader.ReadString().Trim();
+                    if (XmlReader.Name.ToString() == "url") newVersionUrl = XmlReader.ReadString().Trim();
+                }
+                XmlReader.Close();
+
+                if (newVersionId <= currentVersionId)
+                {
+                    if(!alertUpdateOnly) MessageBox.Show("Congrats! You are using latest version of SynGestures.", "No update available", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                {
+                    newVersionChanges = newVersionChanges.Replace("\\n", "\n");
+                    var result = MessageBox.Show("A new version of SynGestures was found: " + newVersionString + "\n\nChangelog:\n" + newVersionChanges + "\n\nDo you want to download the new version now?", "Update available", MessageBoxButtons.YesNo, MessageBoxIcon.Information);
+                    if (result == System.Windows.Forms.DialogResult.Yes)
+                    {
+                        System.Diagnostics.Process.Start(newVersionUrl);
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                if (!alertUpdateOnly) MessageBox.Show("An error occured while looking for updates. Please try again later.", "Could not check for update", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void btnUpdate_Click(object sender, EventArgs e)
+        {
+            checkUpdate(false);
+        }
+
 
 
     }

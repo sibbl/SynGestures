@@ -35,6 +35,9 @@
   </PropertyGroup>
   <PropertyGroup />
   <PropertyGroup />
+  <PropertyGroup>
+    <ApplicationIcon>Resources\icon.ico</ApplicationIcon>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Accessibility">
       <EmbedInteropTypes>True</EmbedInteropTypes>
@@ -71,6 +74,7 @@
     <Compile Include="InputSimulator\XButton.cs" />
     <Compile Include="InvokeActionManager.cs" />
     <Compile Include="InvokeItem.cs" />
+    <Compile Include="Logger.cs" />
     <Compile Include="NativeMethods.cs" />
     <Compile Include="settingsDlg.cs">
       <SubType>Form</SubType>
@@ -125,17 +129,9 @@
       <Isolated>False</Isolated>
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </COMReference>
-    <COMReference Include="SYNTPCOM">
-      <Guid>{2A833A82-6641-11D3-B5FE-00104B0A87C2}</Guid>
-      <VersionMajor>1</VersionMajor>
-      <VersionMinor>0</VersionMinor>
-      <Lcid>0</Lcid>
-      <WrapperTool>tlbimp</WrapperTool>
-      <Isolated>False</Isolated>
-      <EmbedInteropTypes>True</EmbedInteropTypes>
-    </COMReference>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Resources\icon.ico" />
     <None Include="Resources\tray.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

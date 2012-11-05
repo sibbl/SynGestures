@@ -27,8 +27,8 @@ namespace synGestures.Config
         public ConfigInvokeItem SwipeThreeDown = null;
         public ConfigInvokeItem SwipeThreeLeft = null;
 
-        public int SwipeBorderStartInsetX = 200;
-        public int SwipeBorderStartInsetY = 20;
+        public int SwipeBorderStartInsetX = 250;
+        public int SwipeBorderStartInsetY = 200;
         public int SwipeBorderInsetX = 200;
         public int SwipeBorderInsetY = 200;
         public int SwipeBorderSpeedMs = 300;
@@ -71,6 +71,8 @@ namespace synGestures.Config
             newConfig.TapMaxMsBetween = 200;
             newConfig.TapMaxDistance = 150;
 
+            newConfig.SwipeBorderStartInsetX = 250;
+            newConfig.SwipeBorderStartInsetY = 200;
             newConfig.SwipeBorderInsetX = newConfig.SwipeBorderInsetY = 150;
             newConfig.SwipeBorderSpeedMs = 300;
 

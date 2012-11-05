@@ -81,6 +81,8 @@ namespace synGestures
                     return new InvokeItem(holdKeys, VirtualKeyCode.TAB);
                 case DefaultAction.ShowMetroAppSettings:
                     return new InvokeItem(VirtualKeyCode.LWIN, VirtualKeyCode.VK_Z);
+                case DefaultAction.WindowsScreenshot:
+                    return new InvokeItem(VirtualKeyCode.LWIN, VirtualKeyCode.PRINT);
                 case DefaultAction.ShowProgramList:
                     holdKeys = new List<VirtualKeyCode>();
                     holdKeys.Add(VirtualKeyCode.MENU);
@@ -133,7 +135,7 @@ namespace synGestures
             defaultActions.Add("Scroll page up (Page Up)", DefaultAction.PageUp);
             defaultActions.Add("Scroll page down (Page Down)", DefaultAction.PageDown);
             defaultActions.Add("Show Charms bar (Win+C)", DefaultAction.ShowCharms);
-            defaultActions.Add("Show open Metro apps (Win+Ctrl+Shift+Tab)", DefaultAction.ShowMetroApps);
+            //defaultActions.Add("Show open Metro apps (Win+Ctrl+Shift+Tab)", DefaultAction.ShowMetroApps);
             defaultActions.Add("Instant search for apps / list of installed apps (Win+Q)", DefaultAction.ShowMetroSearchApps);
             defaultActions.Add("Instant search for settings (Win+W)", DefaultAction.ShowMetroSearchSettings);
             defaultActions.Add("Instant search for files (Win+F)", DefaultAction.ShowMetroSearchFiles);
@@ -144,10 +146,11 @@ namespace synGestures
             defaultActions.Add("Snap Metro app to the right (Win+.)", DefaultAction.SnapMetroAppToRight);
             defaultActions.Add("Snap window to the left (Win+Left)", DefaultAction.SnapWindowToLeft);
             defaultActions.Add("Snap window to the right (Win+Right)", DefaultAction.SnapWindowToRight);
+            defaultActions.Add("Make and save screenshot (Win+Print)", DefaultAction.WindowsScreenshot);
             defaultActions.Add("Maximize current window (Win+Up)", DefaultAction.MaximizeWindow);
             defaultActions.Add("Minimize or restore current window (Win+Down)", DefaultAction.MinimizeWindow);
             defaultActions.Add("Lock Windows (Win+L)", DefaultAction.LockWindows);
-            defaultActions.Add("Open run dialog (Win+L)", DefaultAction.OpenRun);
+            defaultActions.Add("Open run dialog (Win+R)", DefaultAction.OpenRun);
             defaultActions.Add("Show start menu (Win)", DefaultAction.StartMenu);
             defaultActions.Add("Close current app (Alt+F4)", DefaultAction.CloseWindow);
 
@@ -156,6 +159,7 @@ namespace synGestures
             defaultActions.Add("Go to desktop (Win+D)", DefaultAction.GoToDesktop);
             defaultActions.Add("Switch to last Metro app (Win+Tab)", DefaultAction.SwitchToLastMetroWindow);
             defaultActions.Add("Switch to last window (Alt+Tab)", DefaultAction.SwitchToLastWindow);
+
 
             
             defaultActions.Add("Open Windows Explorer (Win+E)", DefaultAction.OpenExplorer);

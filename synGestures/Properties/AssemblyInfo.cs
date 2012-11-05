@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("SynGestures")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("Klickin Webdesign")]
 [assembly: AssemblyProduct("SynGestures")]
 [assembly: AssemblyCopyright("Copyright © 2012 sibbl")]
 [assembly: AssemblyTrademark("")]

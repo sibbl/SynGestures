@@ -124,10 +124,13 @@
     <value>SynGestures Beta</value>
   </data>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="tray" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\tray.ico;System.Drawing.Icon, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="icon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\icon.ico;System.Drawing.Icon, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="error_startup_no_driver_found" xml:space="preserve">
     <value>Please make sure that you have a Synaptics Touchpad and the Synaptics driver from www.synaptics.com installed.</value>
+  </data>
+  <data name="tray" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\tray.ico;System.Drawing.Icon, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
 </root>

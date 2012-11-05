@@ -68,6 +68,7 @@ namespace synGestures
         PageUp,
         PageDown,
         SwitchToLastWindow,
-        SwitchToLastMetroWindow
+        SwitchToLastMetroWindow,
+        WindowsScreenshot
     }
 }
