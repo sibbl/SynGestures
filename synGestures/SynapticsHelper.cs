@@ -102,6 +102,7 @@ namespace synGestures
             ReadDeviceProperties();
         }
         public bool Init()
+
         {
             log = new Logger();
             try
