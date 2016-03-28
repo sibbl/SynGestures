@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace synGestures
+﻿namespace synGestures
 {
     public enum MouseKeyCode { Left, Middle, Right }
     public enum ActionType

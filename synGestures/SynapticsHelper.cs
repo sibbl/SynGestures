@@ -1,133 +1,150 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using SYNCTRLLib;
 using System.Drawing;
-using System.Windows.Forms;
-using synGestures.Properties;
 using System.Runtime.InteropServices;
-using synGestures.Config;
-using SYNCOMLib;
+using System.Threading;
+using System.Windows.Forms;
 using Microsoft.Win32;
+using synGestures.Config;
+using synGestures.Properties;
+using SYNCTRLLib;
 
 namespace synGestures
 {
     public delegate bool SynapticsAction(ActionType type);
     public class SynapticsHelper
     {
-        public Configuration config;
+        private Configuration _config;
 
-        private SynAPI synAPI;
-        private SynDeviceCtrl synTouchPad;
+        public Configuration Config
+        {
+            set { _config = value; }
+        }
 
-        private Logger log;
+        private SynAPICtrl _synApi;
+        private SynDeviceCtrl _synTouchPad;
 
-        private int devHandle = -1;
+        private Logger _log;
 
-        private bool isDeviceTapLocked = false;
-        private bool synTapState = false;
-        private int tapMaxNof = 0;
-        private int tapLastNof = 0;
-        private Point tapTouchPos;
-        private Point tapFirstTouchPos;
-        private int tapStartTime = 0;
-        private int tapTouchTime = 0;
-        private bool tapDone = false;
+        private int _devHandle = -1;
 
-        private int scrollTouchTime = 0;
-        private Point scrollTouchPos;
-        private bool IsPadAcquired = true;
-        private ScrollDirection scrollDir;
-        private bool scrollNotEdgeX = false;
-        private bool scrollNotEdgeY = false;
-        private int scrollLastXDelta = 0;
-        private int scrollLastYDelta = 0;
-        private bool swipeDone = true;
-        private int swipeXDelta = 0;
-        private int swipeYDelta = 0;
-        private int scrollBufferX = 0;
-        private int scrollBufferY = 0;
+        private bool _isDeviceTapLocked;
+        private bool _synTapState;
+        private int _tapMaxNof;
+        private int _tapLastNof;
+        private Point _tapTouchPos;
+        private Point _tapFirstTouchPos;
+        private int _tapStartTime;
+        private int _tapTouchTime;
+        private bool _tapDone;
+
+        private int _scrollTouchTime;
+        private Point _scrollTouchPos;
+        private bool _isPadAcquired = true;
+        private ScrollDirection _scrollDir;
+        private bool _scrollNotEdgeX;
+        private bool _scrollNotEdgeY;
+        private int _scrollLastXDelta;
+        private int _scrollLastYDelta;
+        private bool _swipeDone = true;
+        private int _swipeXDelta;
+        private int _swipeYDelta;
+        private int _scrollBufferX;
+        private int _scrollBufferY;
 
         //properties:
         //private int tapMaxDistance = 50;
-        private bool scrollLinearEdgeX = true;
-        private bool scrollLinearEdgeY = true;
-        private bool scrollLinearX = true;
-        private bool scrollLinearY = true;
+        private bool _scrollLinearEdgeX = true;
+        private bool _scrollLinearEdgeY = true;
+        private bool _scrollLinearX = true;
+        private bool _scrollLinearY = true;
         
-        int ylo = 0;
-        int yhi = 0;
-        int xlo = 0;
-        int xhi = 0;
-        int xlorim = 0;
-        int xhirim = 0;
-        int ylorim = 0;
-        int yhirim = 0;
-        int xmin = 0;
-        int xmax = 0;
-        int ymin = 0;
-        int ymax = 0;
+        private int _ylo;
+        private int _yhi;
+        private int _xlo;
+        private int _xhi;
+        private int _xlorim;
+        private int _xhirim;
+        private int _ylorim;
+        private int _yhirim;
+        private int _xmin;
+        private int _xmax;
+        private int _ymin;
+        private int _ymax;
 
-        public event SynapticsAction actionEvent;
+        public event SynapticsAction ActionEvent;
         protected virtual bool OnActionEvent(ActionType type)
         {
-            return actionEvent(type);
+            try
+            {
+                return ActionEvent != null && ActionEvent(type);
+            }
+            catch (Exception exception)
+            {
+                _log.Log("OnActionEvent: " + exception.Message);
+                return false;
+            }
         }
 
 
-        public SynapticsHelper(Configuration _config)
+        public SynapticsHelper(Configuration config)
         {
-            config = _config;
+            _config = config;
         }
         public void Resume()
         {
-            log.LogDebug("resuming...");
-            synAPI = new SynAPI();
-            synTouchPad = new SynDeviceCtrl();
-            synTouchPad.OnPacket += new _ISynDeviceCtrlEvents_OnPacketEventHandler(onPacket);
-            synAPI.Initialize();
+            //this is necessery after coming back from standby/hibernation
+            _log.LogDebug("resuming...");
+            _synApi = new SynAPICtrl();
+            _synTouchPad = new SynDeviceCtrl();
+            _synApi.Initialize();
+            _synApi.Activate();
             
-            synAPI.FindDevice(
-                (int)SYNCTRLLib.SynConnectionType.SE_ConnectionAny,
-                (int)SYNCTRLLib.SynDeviceType.SE_DeviceTouchPad,
-                ref devHandle);
-            if (devHandle < 0)
+            _devHandle = _synApi.FindDevice(
+                SynConnectionType.SE_ConnectionAny,
+                SynDeviceType.SE_DeviceTouchPad,
+                -1);
+            if (_devHandle < 0)
             {
-                System.Threading.Thread.Sleep(500);
+                //I know, this should be async...
+                Thread.Sleep(500);
                 Resume();
                 return;
             }
-            synTouchPad.Select(devHandle);
+            _synTouchPad.Select(_devHandle);
+            _synTouchPad.Activate();
+            _synTouchPad.OnPacket += OnPacket;
             ReadDeviceProperties();
         }
         public bool Init()
-
         {
-            log = new Logger();
+            _log = new Logger();
             try
             {
-                log.LogDebug("Create SynAPI");
-                synAPI = new SynAPI();
-                log.LogDebug("Create SynDeviceCtrl");
-                synTouchPad = new SynDeviceCtrl();
-                log.LogDebug("Create OnPacketEventHandler");
+                _log.LogDebug("Create SynAPI");
+                _synApi = new SynAPICtrl();
+                _log.LogDebug("Create SynDeviceCtrl");
+                _synTouchPad = new SynDeviceCtrl();
 
-                synTouchPad.OnPacket += new _ISynDeviceCtrlEvents_OnPacketEventHandler(onPacket);
 
-                log.LogDebug("Init SynAPI");
-                synAPI.Initialize();
+                _log.LogDebug("Init SynAPI");
+                _synApi.Initialize();
+                _synApi.Activate();
 
-                log.LogDebug("Find Synaptics Device");
-                synAPI.FindDevice(
-                    (int)SYNCTRLLib.SynConnectionType.SE_ConnectionAny,
-                    (int)SYNCTRLLib.SynDeviceType.SE_DeviceTouchPad,
-                    ref devHandle);
+                _log.LogDebug("Find Synaptics Device");
+                _devHandle = _synApi.FindDevice(
+                    SynConnectionType.SE_ConnectionAny,
+                    SynDeviceType.SE_DeviceTouchPad,
+                    -1);
+                _synTouchPad.Select(_devHandle);
+
+                _synTouchPad.Activate();
+                _log.LogDebug("Create OnPacketEventHandler");
+                _synTouchPad.OnPacket += OnPacket;
 
             }
             catch (Exception ex)
             {
-                log.LogDebug("Error on init: " + ex.InnerException.Message);
+                _log.LogDebug("Error on init: " + ex.InnerException.Message);
                 MessageBox.Show(
                     Resources.error_startup_no_driver_found,
                     Resources.error_msg_title,
@@ -138,25 +155,23 @@ namespace synGestures
                 return false;
             }
 
-            if (devHandle < 0)
+            if (_devHandle < 0)
             {
-                log.LogDebug("No device handle found");
+                _log.LogDebug("No device handle found");
                 MessageBox.Show(Resources.error_startup_no_device_found,
                                 Resources.error_msg_title, MessageBoxButtons.OK, MessageBoxIcon.Error);
                 Application.Exit();
                 return false;
             }
-            log.LogDebug("Device handle found: "+devHandle);
+            _log.LogDebug("Device handle found: "+_devHandle);
 
-            synTouchPad.Select(devHandle);
-            //synTouchPad.CreatePacket(ref _synPacket);
-
-            int multi = synTouchPad.GetLongProperty(SYNCTRLLib.SynDeviceProperty.SP_IsMultiFingerCapable);
+            //check if the touchpad has support for multiple fingers
+            var multi = _synTouchPad.GetLongProperty(SynDeviceProperty.SP_IsMultiFingerCapable);
             if (multi < 0)
             {
                 //HKLM "System\\CurrentControlSet\\Services\\SynTP\\Parameters" -> CapabilitiesMask must be 0xFFFFFFFF
-                string parampath = @"System\CurrentControlSet\Services\SynTP\Parameters";
-                RegistryKey key = Registry.LocalMachine.CreateSubKey(parampath);
+                var parampath = @"System\CurrentControlSet\Services\SynTP\Parameters";
+                var key = Registry.LocalMachine.CreateSubKey(parampath);
                 key.SetValue("CapabilitiesMask", 0xFFFFFFFF);
                 MessageBox.Show("Multiple finger support was missing. We made some changes to the registry.\n\nTry running SynGestures again or reboot your computer and try again then.",
                                 Resources.error_msg_title, MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -170,211 +185,210 @@ namespace synGestures
         }
         private void CheckTappingProperty()
         {
-            var tapEnabled = synTouchPad.GetLongProperty(SYNCTRLLib.SynDeviceProperty.SP_IsTapEnabled);
-            if (tapEnabled == 0) synTouchPad.SetLongProperty(SYNCTRLLib.SynDeviceProperty.SP_IsTapEnabled, 1);
+            var tapEnabled = _synTouchPad.GetLongProperty(SynDeviceProperty.SP_IsTapEnabled);
+            if (tapEnabled == 0) _synTouchPad.SetLongProperty(SynDeviceProperty.SP_IsTapEnabled, 1);
 
             /*
-            var dragEnabled = synTouchPad.GetLongProperty(SYNCTRLLib.SynDeviceProperty.SP_IsDragEnabled);
-            if (dragEnabled == 0) synTouchPad.SetLongProperty(SYNCTRLLib.SynDeviceProperty.SP_IsDragEnabled, 1);
+            var dragEnabled = _synTouchPad.GetLongProperty(SYNCTRLLib.SynDeviceProperty.SP_IsDragEnabled);
+            if (dragEnabled == 0) _synTouchPad.SetLongProperty(SYNCTRLLib.SynDeviceProperty.SP_IsDragEnabled, 1);
 
-            var cornerTapEnabled = synTouchPad.GetLongProperty(SYNCTRLLib.SynDeviceProperty.SP_IsCornerTapEnabled);
-            if (cornerTapEnabled == 1) synTouchPad.SetLongProperty(SYNCTRLLib.SynDeviceProperty.SP_IsCornerTapEnabled, 0);
+            var cornerTapEnabled = _synTouchPad.GetLongProperty(SYNCTRLLib.SynDeviceProperty.SP_IsCornerTapEnabled);
+            if (cornerTapEnabled == 1) _synTouchPad.SetLongProperty(SYNCTRLLib.SynDeviceProperty.SP_IsCornerTapEnabled, 0);
             */
         }
         private void ReadDeviceProperties()
         {
-            ylo = synTouchPad.GetLongProperty(SYNCTRLLib.SynDeviceProperty.SP_YLoBorder);
-            yhi = synTouchPad.GetLongProperty(SYNCTRLLib.SynDeviceProperty.SP_YHiBorder);
-            xlo = synTouchPad.GetLongProperty(SYNCTRLLib.SynDeviceProperty.SP_XLoBorder);
-            xhi = synTouchPad.GetLongProperty(SYNCTRLLib.SynDeviceProperty.SP_XHiBorder);
-            xlorim = synTouchPad.GetLongProperty(SYNCTRLLib.SynDeviceProperty.SP_XLoRim);
-            xhirim = synTouchPad.GetLongProperty(SYNCTRLLib.SynDeviceProperty.SP_XHiRim);
-            ylorim = synTouchPad.GetLongProperty(SYNCTRLLib.SynDeviceProperty.SP_YLoRim);
-            yhirim = synTouchPad.GetLongProperty(SYNCTRLLib.SynDeviceProperty.SP_YHiRim);
-            xmin = synTouchPad.GetLongProperty(SYNCTRLLib.SynDeviceProperty.SP_XLoSensor);
-            xmax = synTouchPad.GetLongProperty(SYNCTRLLib.SynDeviceProperty.SP_XHiSensor);
-            ymin = synTouchPad.GetLongProperty(SYNCTRLLib.SynDeviceProperty.SP_YLoSensor);
-            ymax = synTouchPad.GetLongProperty(SYNCTRLLib.SynDeviceProperty.SP_YHiSensor);
+            _ylo = _synTouchPad.GetLongProperty(SynDeviceProperty.SP_YLoBorder);
+            _yhi = _synTouchPad.GetLongProperty(SynDeviceProperty.SP_YHiBorder);
+            _xlo = _synTouchPad.GetLongProperty(SynDeviceProperty.SP_XLoBorder);
+            _xhi = _synTouchPad.GetLongProperty(SynDeviceProperty.SP_XHiBorder);
+            _xlorim = _synTouchPad.GetLongProperty(SynDeviceProperty.SP_XLoRim);
+            _xhirim = _synTouchPad.GetLongProperty(SynDeviceProperty.SP_XHiRim);
+            _ylorim = _synTouchPad.GetLongProperty(SynDeviceProperty.SP_YLoRim);
+            _yhirim = _synTouchPad.GetLongProperty(SynDeviceProperty.SP_YHiRim);
+            _xmin = _synTouchPad.GetLongProperty(SynDeviceProperty.SP_XLoSensor);
+            _xmax = _synTouchPad.GetLongProperty(SynDeviceProperty.SP_XHiSensor);
+            _ymin = _synTouchPad.GetLongProperty(SynDeviceProperty.SP_YLoSensor);
+            _ymax = _synTouchPad.GetLongProperty(SynDeviceProperty.SP_YHiSensor);
 
-            log.LogDebug("ylo=" + ylo);
-            log.LogDebug("yhi=" + yhi);
-            log.LogDebug("xlo=" + xlo);
-            log.LogDebug("xhi=" + xhi);
-            log.LogDebug("xlorim=" + xlorim);
-            log.LogDebug("xhirim=" + xhirim);
-            log.LogDebug("ylorim=" + ylorim);
-            log.LogDebug("yhirim=" + yhirim);
-            log.LogDebug("xmin=" + xmin);
-            log.LogDebug("xmax=" + xmax);
-            log.LogDebug("ymin=" + ymin);
-            log.LogDebug("ymax=" + ymax);
+            _log.LogDebug("ylo=" + _ylo);
+            _log.LogDebug("yhi=" + _yhi);
+            _log.LogDebug("xlo=" + _xlo);
+            _log.LogDebug("xhi=" + _xhi);
+            _log.LogDebug("xlorim=" + _xlorim);
+            _log.LogDebug("xhirim=" + _xhirim);
+            _log.LogDebug("ylorim=" + _ylorim);
+            _log.LogDebug("yhirim=" + _yhirim);
+            _log.LogDebug("xmin=" + _xmin);
+            _log.LogDebug("xmax=" + _xmax);
+            _log.LogDebug("ymin=" + _ymin);
+            _log.LogDebug("ymax=" + _ymax);
 
             CheckTappingProperty();
 
         }
         private void LockDeviceTap(bool dolock)
         {
-            if (dolock != isDeviceTapLocked)
+            if (dolock != _isDeviceTapLocked)
             {
                 if (dolock)
                 {
-                    int gest = synTouchPad.GetLongProperty(SYNCTRLLib.SynDeviceProperty.SP_Gestures);
-                    if ((gest & (int)SYNCTRLLib.SynGestures.SF_GestureTap) != 0)
+                    var gest = _synTouchPad.GetLongProperty(SynDeviceProperty.SP_Gestures);
+                    if ((gest & (int)SynGestures.SF_GestureTap) != 0)
                     {
-                        synTouchPad.SetLongProperty(SYNCTRLLib.SynDeviceProperty.SP_Gestures,
-                                                    gest & ~(int)SYNCTRLLib.SynGestures.SF_GestureTap);
+                        _synTouchPad.SetLongProperty(SynDeviceProperty.SP_Gestures,
+                                                    gest & ~(int)SynGestures.SF_GestureTap);
                         ;
-                        synTapState = true;
+                        _synTapState = true;
                     }
-                    else synTapState = false;
+                    else _synTapState = false;
                 }
                 else
                 {
-                    int gest = synTouchPad.GetLongProperty(SYNCTRLLib.SynDeviceProperty.SP_Gestures);
-                    if (synTapState) gest |= (int)SYNCTRLLib.SynGestures.SF_GestureTap;
-                    else gest &= ~(int)SYNCTRLLib.SynGestures.SF_GestureTap;
-                    synTouchPad.SetLongProperty(SYNCTRLLib.SynDeviceProperty.SP_Gestures,
-                                                gest & ~(int)SYNCTRLLib.SynGestures.SF_GestureTap);
+                    var gest = _synTouchPad.GetLongProperty(SynDeviceProperty.SP_Gestures);
+                    if (_synTapState) gest |= (int)SynGestures.SF_GestureTap;
+                    else gest &= ~(int)SynGestures.SF_GestureTap;
+                    _synTouchPad.SetLongProperty(SynDeviceProperty.SP_Gestures,
+                                                gest & ~(int)SynGestures.SF_GestureTap);
                 }
-                isDeviceTapLocked = dolock;
+                _isDeviceTapLocked = dolock;
             }
         }
         public void AcquirePad(bool acquire)
         {
-            //return;
-            if (acquire && !IsPadAcquired)
+            /*
+            if (acquire && !_isPadAcquired)
             {
                 try
                 {
-                    //synTouchPad.Acquire(0);
+                    _synTouchPad.Acquire(0);
                 }
                 catch
                 {
+                    //ignore
                 }
             }
-            else if (!acquire && IsPadAcquired)
+            else if (!acquire && _isPadAcquired)
             {
-                //synTouchPad.Unacquire();
+                _synTouchPad.Unacquire();
             }
-            IsPadAcquired = acquire;
+            */
+            _isPadAcquired = acquire;
         }
         public int GetDistance(Point a, Point b)
         {
-            int result = 0;
-            double part1 = Math.Pow((b.X - a.X), 2);
-            double part2 = Math.Pow((b.Y - a.Y), 2);
-            double underRadical = part1 + part2;
+            var result = 0;
+            var part1 = Math.Pow((b.X - a.X), 2);
+            var part2 = Math.Pow((b.Y - a.Y), 2);
+            var underRadical = part1 + part2;
             result = (int)Math.Sqrt(underRadical);
             return result;
         }
-        private void onPacket()
+        private void OnPacket()
         {
             var packet = new SynPacketCtrl();
-            synTouchPad.LoadPacket(packet);
+            _synTouchPad.LoadPacket(packet);
 
             CheckTappingProperty();
             
-            int nof = packet.GetLongProperty(SYNCTRLLib.SynPacketProperty.SP_ExtraFingerState) & 3;
-            int fstate = packet.GetLongProperty(SYNCTRLLib.SynPacketProperty.SP_FingerState);
-            int xd = packet.GetLongProperty(SYNCTRLLib.SynPacketProperty.SP_XDelta);
-            int yd = packet.GetLongProperty(SYNCTRLLib.SynPacketProperty.SP_YDelta);
-            int y = packet.GetLongProperty(SYNCTRLLib.SynPacketProperty.SP_Y);
-            int x = packet.GetLongProperty(SYNCTRLLib.SynPacketProperty.SP_X);
+            var nof = packet.GetLongProperty(SynPacketProperty.SP_ExtraFingerState) & 3;
+            var fstate = packet.GetLongProperty(SynPacketProperty.SP_FingerState);
+            var xd = packet.GetLongProperty(SynPacketProperty.SP_XDelta);
+            var yd = packet.GetLongProperty(SynPacketProperty.SP_YDelta);
+            var y = packet.GetLongProperty(SynPacketProperty.SP_Y);
+            var x = packet.GetLongProperty(SynPacketProperty.SP_X);
 
-            log.LogDebug("got packet");
-            log.LogDebug("nof=" + nof);
-            log.LogDebug("fstate=" + fstate);
-            log.LogDebug("xd=" + xd);
-            log.LogDebug("yd=" + yd);
-            log.LogDebug("x=" + x);
-            log.LogDebug("y=" + y);
+            _log.LogDebug("got packet");
+            _log.LogDebug("nof=" + nof);
+            _log.LogDebug("fstate=" + fstate);
+            _log.LogDebug("xd=" + xd);
+            _log.LogDebug("yd=" + yd);
+            _log.LogDebug("x=" + x);
+            _log.LogDebug("y=" + y);
 
-            if (nof > tapMaxNof) tapMaxNof = nof; 
+            if (nof > _tapMaxNof) _tapMaxNof = nof; 
             //handle tapping
-            if (nof > tapLastNof) // on press
+            if (nof > _tapLastNof) // on press
             {
-                tapDone = false;
+                _tapDone = false;
                 if (nof >= 2) //on press of more than one finger
                 {
-                    tapStartTime = packet.GetLongProperty(SYNCTRLLib.SynPacketProperty.SP_TimeStamp);
+                    _tapStartTime = packet.GetLongProperty(SynPacketProperty.SP_TimeStamp);
                     
 
                     LockDeviceTap(true);
                 }
-                if (tapLastNof == 0) //first touch
+                if (_tapLastNof == 0) //first touch
                 {
-                    tapTouchTime = packet.GetLongProperty(SYNCTRLLib.SynPacketProperty.SP_TimeStamp);
-                    NativeMethods.GetCursorPos(ref tapTouchPos);
-                    tapFirstTouchPos = new Point(x, y);
+                    _tapTouchTime = packet.GetLongProperty(SynPacketProperty.SP_TimeStamp);
+                    NativeMethods.GetCursorPos(ref _tapTouchPos);
+                    _tapFirstTouchPos = new Point(x, y);
                 }
             }
-            else if (nof < tapLastNof) // on release
+            else if (nof < _tapLastNof) // on release
             {
                 if (nof == 0)
                 {
-                    tapDone = false;
-                    tapMaxNof = 0;
+                    _tapDone = false;
+                    _tapMaxNof = 0;
                 }
-                if (tapLastNof >= 1 && !tapDone)
+                if (_tapLastNof >= 1 && !_tapDone)
                 {
-                    bool ok = false;
-                    int tstamp = packet.GetLongProperty(SYNCTRLLib.SynPacketProperty.SP_TimeStamp);
-                    if (tstamp - tapTouchTime < config.SwipeBorderSpeedMs &&
-                        (tapFirstTouchPos.X > (xmax - config.SwipeBorderStartInsetX) || 
-                         tapFirstTouchPos.X < (xmin + config.SwipeBorderStartInsetX) || 
-                         tapFirstTouchPos.Y > (ymax - config.SwipeBorderStartInsetY) || 
-                         tapFirstTouchPos.Y < (xmin + config.SwipeBorderStartInsetY)))
+                    var ok = false;
+                    var tstamp = packet.GetLongProperty(SynPacketProperty.SP_TimeStamp);
+                    if (tstamp - _tapTouchTime < _config.SwipeBorderSpeedMs &&
+                        (_tapFirstTouchPos.X > (_xmax - _config.SwipeBorderStartInsetX) || 
+                         _tapFirstTouchPos.X < (_xmin + _config.SwipeBorderStartInsetX) || 
+                         _tapFirstTouchPos.Y > (_ymax - _config.SwipeBorderStartInsetY) || 
+                         _tapFirstTouchPos.Y < (_xmin + _config.SwipeBorderStartInsetY)))
                     {
-                        log.LogDebug("first touch: " + tapFirstTouchPos.X + "/" + tapFirstTouchPos.Y);
-                        log.LogDebug("current touch: " + x + "/" + y);
-                        if (tapFirstTouchPos.X > (xmax - config.SwipeBorderStartInsetX) && x < tapFirstTouchPos.X - config.SwipeBorderInsetX)
+                        _log.LogDebug("first touch: " + _tapFirstTouchPos.X + "/" + _tapFirstTouchPos.Y);
+                        _log.LogDebug("current touch: " + x + "/" + y);
+                        if (_tapFirstTouchPos.X > (_xmax - _config.SwipeBorderStartInsetX) && x < _tapFirstTouchPos.X - _config.SwipeBorderInsetX)
                         {
-                            log.LogDebug("swipe border right");
+                            _log.LogDebug("swipe border right");
                             ok = OnActionEvent(ActionType.SwipeBorderRight);
-                            NativeMethods.SetCursorPos(tapTouchPos.X, tapTouchPos.Y);
+                            NativeMethods.SetCursorPos(_tapTouchPos.X, _tapTouchPos.Y);
                         }
-                        else if (tapFirstTouchPos.X < (xmin + config.SwipeBorderStartInsetX) && x > tapFirstTouchPos.X + config.SwipeBorderInsetX)
+                        else if (_tapFirstTouchPos.X < (_xmin + _config.SwipeBorderStartInsetX) && x > _tapFirstTouchPos.X + _config.SwipeBorderInsetX)
                         {
-                            log.LogDebug("swipe border left");
+                            _log.LogDebug("swipe border left");
                             ok = OnActionEvent(ActionType.SwipeBorderLeft);
-                            NativeMethods.SetCursorPos(tapTouchPos.X, tapTouchPos.Y);
+                            NativeMethods.SetCursorPos(_tapTouchPos.X, _tapTouchPos.Y);
                         }
-                        else if (tapFirstTouchPos.Y > (ymax - config.SwipeBorderStartInsetY) && y < tapFirstTouchPos.Y - config.SwipeBorderInsetY)
+                        else if (_tapFirstTouchPos.Y > (_ymax - _config.SwipeBorderStartInsetY) && y < _tapFirstTouchPos.Y - _config.SwipeBorderInsetY)
                         {
-                            log.LogDebug("swipe border top");
+                            _log.LogDebug("swipe border top");
                             ok = OnActionEvent(ActionType.SwipeBorderTop);
-                            NativeMethods.SetCursorPos(tapTouchPos.X, tapTouchPos.Y);
+                            NativeMethods.SetCursorPos(_tapTouchPos.X, _tapTouchPos.Y);
                         }
-                        else if (tapFirstTouchPos.Y < (ymin + config.SwipeBorderStartInsetY) && y > tapFirstTouchPos.Y + config.SwipeBorderInsetY)
+                        else if (_tapFirstTouchPos.Y < (_ymin + _config.SwipeBorderStartInsetY) && y > _tapFirstTouchPos.Y + _config.SwipeBorderInsetY)
                         {
-                            log.LogDebug("swipe border bottom");
+                            _log.LogDebug("swipe border bottom");
                             ok = OnActionEvent(ActionType.SwipeBorderBottom);
-                            NativeMethods.SetCursorPos(tapTouchPos.X, tapTouchPos.Y);
+                            NativeMethods.SetCursorPos(_tapTouchPos.X, _tapTouchPos.Y);
                         }
-                    }else if (tstamp - tapTouchTime < config.TapMaxMsBetween &&
-                        Math.Abs(tapFirstTouchPos.X - x) < config.TapMaxDistance &&
-                        Math.Abs(tapFirstTouchPos.Y - y) < config.TapMaxDistance) //time between now and first touch < config
+                    }else if (tstamp - _tapTouchTime < _config.TapMaxMsBetween &&
+                        Math.Abs(_tapFirstTouchPos.X - x) < _config.TapMaxDistance &&
+                        Math.Abs(_tapFirstTouchPos.Y - y) < _config.TapMaxDistance) //time between now and first touch < _config
                     {
-                        if (tapLastNof == 1 && tapMaxNof <= 1) ok = OnActionEvent(ActionType.MouseTapOne);
-                        else if (tapLastNof == 2 && tapMaxNof <= 2) ok = OnActionEvent(ActionType.MouseTapTwo);
-                        else if (tapLastNof == 3 && tapMaxNof <= 3) ok = OnActionEvent(ActionType.MouseTapThree);
+                        if (_tapLastNof == 1 && _tapMaxNof <= 1) ok = OnActionEvent(ActionType.MouseTapOne);
+                        else if (_tapLastNof == 2 && _tapMaxNof <= 2) ok = OnActionEvent(ActionType.MouseTapTwo);
+                        else if (_tapLastNof == 3 && _tapMaxNof <= 3) ok = OnActionEvent(ActionType.MouseTapThree);
                     }
-                    else if (tstamp - tapTouchTime > config.MouseTapsLongMs && !tapDone)
+                    else if (tstamp - _tapTouchTime > _config.MouseTapsLongMs && !_tapDone)
                     {
-                        //Point releasePoint = tapTouchPos;
-                        //NativeMethods.GetCursorPos(ref releasePoint);
-                        //if (Math.Abs(releasePoint.X - tapTouchPos.X) < config.MouseTapsLongMovingArea && Math.Abs(releasePoint.Y - tapTouchPos.Y) < config.MouseTapsLongMovingArea)
-                        if(Math.Abs(tapFirstTouchPos.X - x) < config.MouseTapsLongMovingArea &&
-                            Math.Abs(tapFirstTouchPos.Y - y) < config.MouseTapsLongMovingArea)
+                        if(Math.Abs(_tapFirstTouchPos.X - x) < _config.MouseTapsLongMovingArea &&
+                            Math.Abs(_tapFirstTouchPos.Y - y) < _config.MouseTapsLongMovingArea)
                         {
-                            if (tapLastNof == 1 && tapMaxNof <= 1) ok = OnActionEvent(ActionType.MouseTapOneLong);
-                            else if (tapLastNof == 2 && tapMaxNof <= 2) ok = OnActionEvent(ActionType.MouseTapTwoLong);
-                            else if (tapLastNof == 3 && tapMaxNof <= 3) ok = OnActionEvent(ActionType.MouseTapThreeLong);
+                            if (_tapLastNof == 1 && _tapMaxNof <= 1) ok = OnActionEvent(ActionType.MouseTapOneLong);
+                            else if (_tapLastNof == 2 && _tapMaxNof <= 2) ok = OnActionEvent(ActionType.MouseTapTwoLong);
+                            else if (_tapLastNof == 3 && _tapMaxNof <= 3) ok = OnActionEvent(ActionType.MouseTapThreeLong);
                         }
                     }
                     #region old code
                     /*
-                    if (tstamp - tapTouchTime < config.TapMaxMsBetween) //time between now and first touch < config
+                    if (tstamp - tapTouchTime < _config.TapMaxMsBetween) //time between now and first touch < _config
                     {
                         if (tapLastNof == 1)
                         {
@@ -389,8 +403,8 @@ namespace synGestures
                         }
                     }
                     else if (
-                        tstamp - tapTouchTime >= config.TapMaxMsBetween && //time between now and first touch > config
-                        tstamp - tapStartTime < config.TapMaxMsBetween) //time between now and last touch < config
+                        tstamp - tapTouchTime >= _config.TapMaxMsBetween && //time between now and first touch > _config
+                        tstamp - tapStartTime < _config.TapMaxMsBetween) //time between now and last touch < _config
                     {
                         if (tapLastNof == 2)
                         {
@@ -402,13 +416,13 @@ namespace synGestures
                         }
                         //if only one touch has been recognized and time is longer than xyz ms, check if long press
                     }
-                    else if (tapLastNof == 1 && tstamp - tapTouchTime > config.MouseTapOneLongMs)
+                    else if (tapLastNof == 1 && tstamp - tapTouchTime > _config.MouseTapOneLongMs)
                     {
                         //compare end point to start point
                         Point releasePoint = tapTouchPos;
                         NativeMethods.GetCursorPos(ref releasePoint);
                         //only catch difference of 100 (px?)
-                        if (Math.Abs(releasePoint.X - tapTouchPos.X) < config.MouseTapOneLongMovingArea && Math.Abs(releasePoint.Y - tapTouchPos.Y) < config.MouseTapOneLongMovingArea)
+                        if (Math.Abs(releasePoint.X - tapTouchPos.X) < _config.MouseTapOneLongMovingArea && Math.Abs(releasePoint.Y - tapTouchPos.Y) < _config.MouseTapOneLongMovingArea)
                         {
                             ok = OnActionEvent(ActionType.MouseTapOneLong);
                         }
@@ -418,12 +432,12 @@ namespace synGestures
                     //if there is an action, move cursor back to start position where the action has been performed
                     if (ok)
                     {
-                        tapDone = true;
+                        _tapDone = true;
                         //NativeMethods.SetCursorPos(tapTouchPos.X, tapTouchPos.Y);
-                        //tapStartTime -= config.TapMaxMsBetween;
+                        //tapStartTime -= _config.TapMaxMsBetween;
                     }
-                    tapStartTime -= config.TapMaxMsBetween;
-                    tapLastNof = nof;
+                    _tapStartTime -= _config.TapMaxMsBetween;
+                    _tapLastNof = nof;
                     return;
 
                 }
@@ -438,36 +452,36 @@ namespace synGestures
                     LockDeviceTap(false);
             }
             */
-            tapLastNof = nof;
+            _tapLastNof = nof;
 
 
             //handle scrolling
-            if ((fstate & (int)SYNCTRLLib.SynFingerFlags.SF_FingerPresent) != 0)
+            if ((fstate & (int)SynFingerFlags.SF_FingerPresent) != 0)
             {
-                if (scrollTouchTime == 0)
+                if (_scrollTouchTime == 0)
                 {
-                    NativeMethods.GetCursorPos(ref scrollTouchPos);
-                    scrollTouchTime = packet.GetLongProperty(SYNCTRLLib.SynPacketProperty.SP_TimeStamp);
+                    NativeMethods.GetCursorPos(ref _scrollTouchPos);
+                    _scrollTouchTime = packet.GetLongProperty(SynPacketProperty.SP_TimeStamp);
                 }
                 if (nof == 2)
                 {
-                    if (IsPadAcquired && scrollLinearEdgeY && (scrollDir == ScrollDirection.Up || scrollDir == ScrollDirection.Down))
+                    if (_isPadAcquired && _scrollLinearEdgeY && (_scrollDir == ScrollDirection.Up || _scrollDir == ScrollDirection.Down))
                     {
-                        if (ylo <= y && y <= yhi) scrollNotEdgeY = true;
-                        else if (scrollNotEdgeY && ((y < ylo && scrollLastYDelta < 0) ||
-                            (y > yhi && scrollLastYDelta > 0)))
+                        if (_ylo <= y && y <= _yhi) _scrollNotEdgeY = true;
+                        else if (_scrollNotEdgeY && ((y < _ylo && _scrollLastYDelta < 0) ||
+                            (y > _yhi && _scrollLastYDelta > 0)))
                         {
-                            DoScroll(scrollLastXDelta, scrollLastYDelta);
+                            DoScroll(_scrollLastXDelta, _scrollLastYDelta);
                             return;
                         }
                     }
-                    if (IsPadAcquired && scrollLinearEdgeX && (scrollDir == ScrollDirection.Left || scrollDir == ScrollDirection.Right))
+                    if (_isPadAcquired && _scrollLinearEdgeX && (_scrollDir == ScrollDirection.Left || _scrollDir == ScrollDirection.Right))
                     {
-                        if (xlo <= x && x <= xhi) scrollNotEdgeX = true;
-                        else if (scrollNotEdgeX && ((x < xlo && scrollLastXDelta < 0) ||
-                            (x > xhi && scrollLastXDelta > 0)))
+                        if (_xlo <= x && x <= _xhi) _scrollNotEdgeX = true;
+                        else if (_scrollNotEdgeX && ((x < _xlo && _scrollLastXDelta < 0) ||
+                            (x > _xhi && _scrollLastXDelta > 0)))
                         {
-                            DoScroll(scrollLastXDelta, scrollLastYDelta);
+                            DoScroll(_scrollLastXDelta, _scrollLastYDelta);
                             return;
                         }
                         /*
@@ -480,49 +494,49 @@ namespace synGestures
                         }
                         */
                     }
-                    if ((fstate & (int)SYNCTRLLib.SynFingerFlags.SF_FingerMotion) != 0)
+                    if ((fstate & (int)SynFingerFlags.SF_FingerMotion) != 0)
                     {
 
-                        if (!IsPadAcquired)
+                        if (!_isPadAcquired)
                         {
-                            swipeDone = false; //start left/right swipe
+                            _swipeDone = false; //start left/right swipe
 
                             AcquirePad(true);
-                            int tstamp = packet.GetLongProperty(SYNCTRLLib.SynPacketProperty.SP_TimeStamp);
-                            if (tstamp - scrollTouchTime < 1000)
+                            var tstamp = packet.GetLongProperty(SynPacketProperty.SP_TimeStamp);
+                            if (tstamp - _scrollTouchTime < 1000)
                             {
-                                NativeMethods.SetCursorPos(scrollTouchPos.X, scrollTouchPos.Y);
+                                NativeMethods.SetCursorPos(_scrollTouchPos.X, _scrollTouchPos.Y);
                             }
                         }
-                        if (IsPadAcquired)
+                        if (_isPadAcquired)
                         {
-                            swipeXDelta += xd;
-                            swipeYDelta += yd;
-                            if (swipeXDelta < -1 * config.SwipeTwoMovementXDirection && Math.Abs(swipeYDelta) < config.SwipeTwoMovementXOrthogonal)
-                            {  //links
-                                scrollDir = ScrollDirection.Left;
-                                if (!swipeDone) OnActionEvent(ActionType.SwipeTwoLeft);
-                                swipeDone = true;
+                            _swipeXDelta += xd;
+                            _swipeYDelta += yd;
+                            if (_swipeXDelta < -1 * _config.SwipeTwoMovementXDirection && Math.Abs(_swipeYDelta) < _config.SwipeTwoMovementXOrthogonal)
+                            {  //left
+                                _scrollDir = ScrollDirection.Left;
+                                if (!_swipeDone) OnActionEvent(ActionType.SwipeTwoLeft);
+                                _swipeDone = true;
                             }
-                            else if (swipeXDelta > config.SwipeTwoMovementXDirection && Math.Abs(swipeYDelta) < config.SwipeTwoMovementXOrthogonal)
-                            {  //rechts
-                                scrollDir = ScrollDirection.Right;
-                                if (!swipeDone) OnActionEvent(ActionType.SwipeTwoRight);
-                                swipeDone = true;
+                            else if (_swipeXDelta > _config.SwipeTwoMovementXDirection && Math.Abs(_swipeYDelta) < _config.SwipeTwoMovementXOrthogonal)
+                            {  //right
+                                _scrollDir = ScrollDirection.Right;
+                                if (!_swipeDone) OnActionEvent(ActionType.SwipeTwoRight);
+                                _swipeDone = true;
                             }
-                            else if (Math.Abs(swipeXDelta) < config.SwipeTwoMovementYDirection && swipeYDelta < -1 * config.SwipeTwoMovementYOrthogonal)
-                            { //runter
-                                swipeDone = true;
-                                scrollDir = ScrollDirection.Down;
+                            else if (Math.Abs(_swipeXDelta) < _config.SwipeTwoMovementYDirection && _swipeYDelta < -1 * _config.SwipeTwoMovementYOrthogonal)
+                            { //down
+                                _swipeDone = true;
+                                _scrollDir = ScrollDirection.Down;
                             }
-                            else if (Math.Abs(swipeXDelta) < config.SwipeTwoMovementYDirection && swipeYDelta > config.SwipeTwoMovementYOrthogonal)
-                            { //hoch
-                                swipeDone = true;
-                                scrollDir = ScrollDirection.Up;
+                            else if (Math.Abs(_swipeXDelta) < _config.SwipeTwoMovementYDirection && _swipeYDelta > _config.SwipeTwoMovementYOrthogonal)
+                            { //up
+                                _swipeDone = true;
+                                _scrollDir = ScrollDirection.Up;
                             }
-                            scrollLastXDelta = xd;
-                            scrollLastYDelta = yd;
-                            if (scrollDir != ScrollDirection.None)
+                            _scrollLastXDelta = xd;
+                            _scrollLastYDelta = yd;
+                            if (_scrollDir != ScrollDirection.None)
                             {
                                 DoScroll(xd, yd);
                             }
@@ -531,36 +545,36 @@ namespace synGestures
                 }
                 else if (nof == 3)
                 {
-                    if ((fstate & (int)SYNCTRLLib.SynFingerFlags.SF_FingerMotion) != 0)
+                    if ((fstate & (int)SynFingerFlags.SF_FingerMotion) != 0)
                     {
-                        if (!IsPadAcquired)
+                        if (!_isPadAcquired)
                         {
                             AcquirePad(true);
-                            swipeDone = false;
+                            _swipeDone = false;
                         }
-                        if (IsPadAcquired && !swipeDone)
+                        if (_isPadAcquired && !_swipeDone)
                         {
 
-                            swipeXDelta += xd;
-                            swipeYDelta += yd;
-                            if (swipeXDelta < -1 * config.SwipeThreeMovementXDirection && Math.Abs(swipeYDelta) < config.SwipeThreeMovementXOrthogonal)
-                            {  //links
-                                swipeDone = true;
+                            _swipeXDelta += xd;
+                            _swipeYDelta += yd;
+                            if (_swipeXDelta < -1 * _config.SwipeThreeMovementXDirection && Math.Abs(_swipeYDelta) < _config.SwipeThreeMovementXOrthogonal)
+                            {  //left
+                                _swipeDone = true;
                                 OnActionEvent(ActionType.SwipeThreeLeft);
                             }
-                            else if (swipeXDelta > config.SwipeThreeMovementXDirection && Math.Abs(swipeYDelta) < config.SwipeThreeMovementXOrthogonal)
-                            {  //rechts
-                                swipeDone = true;
+                            else if (_swipeXDelta > _config.SwipeThreeMovementXDirection && Math.Abs(_swipeYDelta) < _config.SwipeThreeMovementXOrthogonal)
+                            {  //right
+                                _swipeDone = true;
                                 OnActionEvent(ActionType.SwipeThreeRight);
                             }
-                            else if (Math.Abs(swipeXDelta) < config.SwipeThreeMovementYOrthogonal && swipeYDelta < -1 * config.SwipeThreeMovementYDirection)
-                            { //runter
-                                swipeDone = true;
+                            else if (Math.Abs(_swipeXDelta) < _config.SwipeThreeMovementYOrthogonal && _swipeYDelta < -1 * _config.SwipeThreeMovementYDirection)
+                            { //down
+                                _swipeDone = true;
                                 OnActionEvent(ActionType.SwipeThreeDown);
                             }
-                            else if (Math.Abs(swipeXDelta) < config.SwipeThreeMovementYOrthogonal && swipeYDelta > config.SwipeThreeMovementYDirection)
-                            {  //hoch
-                                swipeDone = true;
+                            else if (Math.Abs(_swipeXDelta) < _config.SwipeThreeMovementYOrthogonal && _swipeYDelta > _config.SwipeThreeMovementYDirection)
+                            {  //up
+                                _swipeDone = true;
                                 OnActionEvent(ActionType.SwipeThreeUp);
                             }
                         }
@@ -568,33 +582,32 @@ namespace synGestures
                 }
                 else
                 {
-                    scrollLastXDelta = scrollLastYDelta = 0;
-                    swipeXDelta = swipeYDelta = 0;
-                    swipeDone = false;
-                    scrollDir = ScrollDirection.None;
+                    _scrollLastXDelta = _scrollLastYDelta = 0;
+                    _swipeXDelta = _swipeYDelta = 0;
+                    _swipeDone = false;
+                    _scrollDir = ScrollDirection.None;
                     AcquirePad(false);
-                    scrollBufferX = scrollBufferY = 0;
-                    scrollNotEdgeX = scrollNotEdgeY = false;
+                    _scrollBufferX = _scrollBufferY = 0;
+                    _scrollNotEdgeX = _scrollNotEdgeY = false;
                 }
             }
             else
             {
-                scrollTouchTime = 0;
-                scrollLastXDelta = scrollLastYDelta = 0;
-                swipeXDelta = swipeYDelta = 0;
-                swipeDone = false;
-                scrollDir = ScrollDirection.None;
+                _scrollTouchTime = 0;
+                _scrollLastXDelta = _scrollLastYDelta = 0;
+                _swipeXDelta = _swipeYDelta = 0;
+                _swipeDone = false;
+                _scrollDir = ScrollDirection.None;
                 AcquirePad(false);
-                scrollBufferX = scrollBufferY = 0;
-                scrollNotEdgeX = scrollNotEdgeY = false;
+                _scrollBufferX = _scrollBufferY = 0;
+                _scrollNotEdgeX = _scrollNotEdgeY = false;
             }
         }
         private bool DoScroll(int dx, int dy)
         {
-            //Console.WriteLine("scroll " + dx + "/" + dy);
-            bool isHorizontal = (scrollDir == ScrollDirection.Left || scrollDir == ScrollDirection.Right);
-            if (!scrollLinearX && isHorizontal) return false;
-            if (!scrollLinearY && !isHorizontal) return false;
+            var isHorizontal = (_scrollDir == ScrollDirection.Left || _scrollDir == ScrollDirection.Right);
+            if (!_scrollLinearX && isHorizontal) return false;
+            if (!_scrollLinearY && !isHorizontal) return false;
 
             int d, dd = isHorizontal ? dx : dy;
 
@@ -602,12 +615,12 @@ namespace synGestures
                 return false;
 
             // scrollSpeed
-            dd = dd * config.ScrollSpeed / 100;
+            dd = dd * _config.ScrollSpeed / 100;
 
             // scrollAcc
-            if (config.ScrollAccelerationEnabled)
+            if (_config.ScrollAccelerationEnabled)
             {
-                d = dd * dd / config.ScrollAcceleration;
+                d = dd * dd / _config.ScrollAcceleration;
                 if (d < 4)
                     d = 4;
                 if (dd < 0)
@@ -625,11 +638,11 @@ namespace synGestures
             }
              * */
 
-            d = config.ScrollReverse ? d * -1 : d;
+            d = _config.ScrollReverse ? d * -1 : d;
 
             if (d != 0)
             {
-                NativeMethods.INPUT[] i = new NativeMethods.INPUT[1];
+                var i = new NativeMethods.INPUT[1];
 
                 i[0].type = NativeMethods.INPUT_MOUSE;
                 i[0].mi.dwFlags = isHorizontal ? NativeMethods.MOUSEEVENTF_HWHEEL : NativeMethods.MOUSEEVENTF_WHEEL;

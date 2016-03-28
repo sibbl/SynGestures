@@ -169,7 +169,7 @@ namespace synGestures
         }
         private void applyConfig()
         {
-            actionManager.loadConfig(config);
+            actionManager.LoadConfig(config);
         }
 
         private void windowsAutoStartChanged(object sender, EventArgs e)

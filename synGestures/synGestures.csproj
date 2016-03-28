@@ -76,18 +76,18 @@
     <Compile Include="InvokeItem.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="NativeMethods.cs" />
-    <Compile Include="settingsDlg.cs">
+    <Compile Include="SettingsDlg.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="settingsDlg.Designer.cs">
-      <DependentUpon>settingsDlg.cs</DependentUpon>
+    <Compile Include="SettingsDlg.Designer.cs">
+      <DependentUpon>SettingsDlg.cs</DependentUpon>
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SynapticsHelper.cs" />
-    <Compile Include="synGesturesClass.cs" />
-    <EmbeddedResource Include="settingsDlg.resx">
-      <DependentUpon>settingsDlg.cs</DependentUpon>
+    <Compile Include="SynGesturesLogic.cs" />
+    <EmbeddedResource Include="SettingsDlg.resx">
+      <DependentUpon>SettingsDlg.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
